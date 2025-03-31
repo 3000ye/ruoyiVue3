@@ -19,12 +19,11 @@ const useUserStore = defineStore(
       login(userInfo) {
         const username = userInfo.username.trim()
         const password = userInfo.password
-        const code = userInfo.code
-        const uuid = userInfo.uuid
+
         return new Promise((resolve, reject) => {
-          login(username, password, code, uuid).then(res => {
-            setToken(res.token)
-            this.token = res.token
+          login(username, password).then(res => {
+            setToken(res.access_token)
+            this.token = res.access_token
             resolve()
           }).catch(error => {
             reject(error)

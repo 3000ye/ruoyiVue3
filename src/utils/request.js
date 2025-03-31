@@ -20,6 +20,8 @@ const service = axios.create({
   timeout: 10000
 })
 
+console.log("baseURL", import.meta.env.VITE_APP_BASE_API);
+
 // request拦截器
 service.interceptors.request.use(config => {
   // 是否需要设置 token

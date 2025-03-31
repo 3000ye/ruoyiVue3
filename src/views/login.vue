@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">vfadmin后台管理系统</h3>
+      <h3 class="title">Data Vista 数据智能终端</h3>
       <el-form-item prop="username">
         <el-input
           v-model="loginForm.username"
@@ -25,22 +25,6 @@
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>
-      <el-form-item prop="code" v-if="captchaEnabled">
-        <el-input
-          v-model="loginForm.code"
-          size="large"
-          auto-complete="off"
-          placeholder="验证码"
-          style="width: 63%"
-          @keyup.enter="handleLogin"
-        >
-          <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
-        </el-input>
-        <div class="login-code">
-          <img :src="codeUrl" @click="getCode" class="login-code-img"/>
-        </div>
-      </el-form-item>
-      <el-checkbox v-model="loginForm.rememberMe" style="margin:0px 0px 25px 0px;">记住密码</el-checkbox>
       <el-form-item style="width:100%;">
         <el-button
           :loading="loading"
@@ -52,114 +36,104 @@
           <span v-if="!loading">登 录</span>
           <span v-else>登 录 中...</span>
         </el-button>
-        <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
-        </div>
+<!--        <div style="float: right;" v-if="register">-->
+<!--          <router-link class="link-type" :to="'/register'">立即注册</router-link>-->
+<!--        </div>-->
       </el-form-item>
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
-      <span>Copyright © 2024 insistence.tech All Rights Reserved.</span>
+      <span>Copyright © 2025 data vista All Rights Reserved.</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { getCodeImg } from "@/api/login";
-import Cookies from "js-cookie";
-import { encrypt, decrypt } from "@/utils/jsencrypt";
-import useUserStore from '@/store/modules/user'
+// 引入第三方库和工具
+import Cookies from "js-cookie"; // 用于操作 Cookie
+import { encrypt, decrypt } from "@/utils/jsencrypt"; // 加密/解密工具
+import useUserStore from '@/store/modules/user' // 引入 Pinia 用户状态管理
 
-const userStore = useUserStore()
-const route = useRoute();
-const router = useRouter();
-const { proxy } = getCurrentInstance();
+// 获取 Pinia 用户状态管理实例
+const userStore = useUserStore();
 
+// 获取 Vue Router 相关的实例
+const route = useRoute(); // 获取当前路由信息
+const router = useRouter(); // 获取路由操作实例
+const { proxy } = getCurrentInstance(); // 获取 Vue 组件实例的代理对象
+
+// 登录表单，使用 ref 创建响应式数据
 const loginForm = ref({
-  username: "",
-  password: "",
-  rememberMe: false,
-  code: "",
-  uuid: ""
+  username: "", // 用户名
+  password: "" // 密码
 });
 
+// 登录表单的校验规则
 const loginRules = {
   username: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
   password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
-  code: [{ required: true, trigger: "change", message: "请输入验证码" }]
 };
 
-const codeUrl = ref("");
+// 控制登录按钮的加载状态，防止重复提交
 const loading = ref(false);
-// 验证码开关
-const captchaEnabled = ref(true);
-// 注册开关
-const register = ref(false);
+
+// 用于存储登录后跳转的地址
 const redirect = ref(undefined);
 
+// 监听路由变化，获取重定向参数
 watch(route, (newRoute) => {
-    redirect.value = newRoute.query && newRoute.query.redirect;
-}, { immediate: true });
+  redirect.value = newRoute.query && newRoute.query.redirect; // 读取 URL 中的 ?redirect 参数
+}, { immediate: true }); // 组件加载时立即执行一次
 
+// 处理登录逻辑
 function handleLogin() {
+  // 调用表单验证
   proxy.$refs.loginRef.validate(valid => {
-    if (valid) {
-      loading.value = true;
-      // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
-      if (loginForm.value.rememberMe) {
-        Cookies.set("username", loginForm.value.username, { expires: 30 });
-        Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
-        Cookies.set("rememberMe", loginForm.value.rememberMe, { expires: 30 });
-      } else {
-        // 否则移除
-        Cookies.remove("username");
-        Cookies.remove("password");
-        Cookies.remove("rememberMe");
-      }
-      // 调用action的登录方法
+    if (valid) { // 表单验证通过
+      loading.value = true; // 开启加载状态
+
+      console.log(proxy)
+
+      // 记住账号和密码（将密码加密后存入 Cookie，有效期 30 天）
+      Cookies.set("username", loginForm.value.username, { expires: 30 });
+      Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
+
+      // 调用 Pinia 中的登录方法
       userStore.login(loginForm.value).then(() => {
+        // 处理登录后跳转逻辑
         const query = route.query;
+
+        console.log("query", query);
+
         const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
-          if (cur !== "redirect") {
+          if (cur !== "redirect") { // 过滤掉 redirect 参数
             acc[cur] = query[cur];
           }
           return acc;
         }, {});
+
+        // 跳转到 redirect 指定的页面（如果有），否则跳转到首页
         router.push({ path: redirect.value || "/", query: otherQueryParams });
       }).catch(() => {
-        loading.value = false;
-        // 重新获取验证码
-        if (captchaEnabled.value) {
-          getCode();
-        }
+        loading.value = false; // 失败时取消加载状态
       });
     }
   });
 }
 
-function getCode() {
-  getCodeImg().then(res => {
-    captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled;
-    register.value = res.registerEnabled === undefined ? false : res.registerEnabled;
-    if (captchaEnabled.value) {
-      codeUrl.value = "data:image/gif;base64," + res.img;
-      loginForm.value.uuid = res.uuid;
-    }
-  });
-}
-
+// 从 Cookie 读取已保存的用户名和密码
 function getCookie() {
   const username = Cookies.get("username");
   const password = Cookies.get("password");
-  const rememberMe = Cookies.get("rememberMe");
+
+  // 如果 Cookie 中有保存的用户名或密码，则填充到表单
   loginForm.value = {
     username: username === undefined ? loginForm.value.username : username,
-    password: password === undefined ? loginForm.value.password : decrypt(password),
-    rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
+    password: password === undefined ? loginForm.value.password : decrypt(password), // 解密密码
   };
 }
 
-getCode();
+// 组件加载时执行 getCookie()，自动填充登录信息
 getCookie();
 </script>
 

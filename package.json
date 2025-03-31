@@ -1,7 +1,7 @@
 {
-  "name": "vfadmin",
-  "version": "1.6.2",
-  "description": "vfadmin管理系统",
+  "name": "vista",
+  "version": "1.0.0",
+  "description": "Data Vista 数据智能终端",
   "author": "insistence",
   "license": "MIT",
   "type": "module",

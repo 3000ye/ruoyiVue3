@@ -1,15 +1,14 @@
 import request from '@/utils/request'
 
 // 登录方法
-export function login(username, password, code, uuid) {
+export function login(username, password) {
   const data = {
     username,
-    password,
-    code,
-    uuid
+    password
   }
   return request({
-    url: '/login',
+    // url: 'http://172.16.3.31:3333/api/system/auth/token',
+    url: '/system/auth/token',
     headers: {
       isToken: false,
       repeatSubmit: false,
@@ -20,23 +19,11 @@ export function login(username, password, code, uuid) {
   })
 }
 
-// 注册方法
-export function register(data) {
-  return request({
-    url: '/register',
-    headers: {
-      isToken: false
-    },
-    method: 'post',
-    data: data
-  })
-}
-
 // 获取用户详细信息
 export function getInfo() {
   return request({
-    url: '/getInfo',
-    method: 'get'
+    url: '/system/auth/current_user',
+    method: 'post'
   })
 }
 
@@ -45,17 +32,5 @@ export function logout() {
   return request({
     url: '/logout',
     method: 'post'
-  })
-}
-
-// 获取验证码
-export function getCodeImg() {
-  return request({
-    url: '/captchaImage',
-    headers: {
-      isToken: false
-    },
-    method: 'get',
-    timeout: 20000
   })
 }
